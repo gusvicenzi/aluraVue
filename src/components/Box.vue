@@ -1,25 +1,26 @@
 <template>
-  <div class="box has-text-weight-bold">
+  <div class="box has-text-weight-bold" :style="estilos">
     <slot></slot> <!-- equivalent to children in React-->
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { StyleValue, defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'BoxComponent',
-  // props: {
-  //   tarefa: {
-  //     type: Object as PropType<ITarefa>,
-  //     required: true
-  //   }
-  // }
+  data() {
+    return {
+      estilos: {
+        "background-color": '#FAF0CA'
+      } as StyleValue
+    }
+  }
 });
 </script>
 
-<style scoped>
+<!-- <style scoped>
 .box {
   background-color: #FAF0CA;
 }
-</style>
+</style> -->
