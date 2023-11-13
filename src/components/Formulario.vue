@@ -13,7 +13,8 @@
         </div>
       </div>
       <div class="column">
-        <Temporizador @aoTemporizadorFinalizado="salvarTarefa" />
+        <Temporizador @aoTemporizadorFinalizado="salvarTarefa" @aoTemporizadorIniciar="iniciarTemporizador"
+          :tempoEmSegundos="tempoEmSegundos" :cronometroRodando="cronometroRodando" :cronometro="cronometro" />
       </div>
     </div>
   </div>
@@ -21,9 +22,10 @@
 
 <script lang="ts">
 import { computed, defineComponent } from 'vue'
-import { useStore } from 'vuex'
 import Temporizador from './Temporizador.vue'
-import { key } from '@/store/index'
+import { useStore } from '@/store'
+import { NOTIFICAR } from '@/store/tipo-mutacoes'
+import { TipoDeNotificacao } from '@/interfaces/INotificacao'
 
 export default defineComponent({
   name: 'FormularioComponent',
@@ -32,20 +34,45 @@ export default defineComponent({
   data() {
     return {
       descricao: '',
-      idProjeto: ''
+      idProjeto: '',
+      tempoEmSegundos: 0,
+      cronometro: 0,
+      cronometroRodando: false
     }
   },
   methods: {
+    iniciarTemporizador() {
+      this.cronometroRodando = true
+      this.cronometro = setInterval(() => {
+        this.tempoEmSegundos += 1;
+      }, 1000);
+    },
     salvarTarefa(tempoDecorrido: number): void {
+      if (!this.idProjeto) {
+        this.store.commit(NOTIFICAR, {
+          titulo: 'Ops!!',
+          texto: 'Selecione um projeto antes de finalizar a tarefa!',
+          tipo: TipoDeNotificacao.FALHA
+        })
+        return
+      }
       console.log(`tempo da tarefa ${this.descricao}: `, tempoDecorrido);
       this.$emit('aoSalvarTarefa', { duracaoEmSegundos: tempoDecorrido, descricao: this.descricao, projeto: this.projetos.find(proj => proj.id === this.idProjeto) })
+
       this.descricao = ''
+
+      // para e zera temporizador
+      this.cronometroRodando = false
+      clearInterval(this.cronometro);
+      this.tempoEmSegundos = 0
+
     }
   },
   setup() {
-    const store = useStore(key)
+    const store = useStore()
     return {
-      projetos: computed(() => store.state.projetos)
+      projetos: computed(() => store.state.projetos),
+      store
     }
   }
 })

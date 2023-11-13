@@ -7,19 +7,23 @@ import {
   ALTERA_PROJETO,
   ALTERA_TAREFA,
   EXCLUIR_PROJETO,
-  EXCLUIR_TAREFA
+  EXCLUIR_TAREFA,
+  NOTIFICAR
 } from './tipo-mutacoes'
 import { ITarefa } from '@/interfaces/ITarefa'
+import { INotificacao } from '@/interfaces/INotificacao'
 
 interface Estado {
   projetos: IProjeto[]
   tarefas: ITarefa[]
+  notificacoes: INotificacao[]
 }
 
 export const key: InjectionKey<Store<Estado>> = Symbol()
 
 export const store = createStore<Estado>({
   state: {
+    notificacoes: [],
     projetos: [{ id: Date.now().toString(), nome: 'teste' }],
     tarefas: []
   },
@@ -51,6 +55,16 @@ export const store = createStore<Estado>({
     },
     [EXCLUIR_TAREFA](state, id: string) {
       state.tarefas = state.tarefas.filter(tar => tar.id !== id)
+    },
+    [NOTIFICAR](state, novaNotificacao: INotificacao) {
+      novaNotificacao.id = Date.now()
+      state.notificacoes.push(novaNotificacao)
+
+      setTimeout(() => {
+        state.notificacoes = state.notificacoes.filter(
+          not => not.id !== novaNotificacao.id
+        )
+      }, 3000)
     }
   }
 })
