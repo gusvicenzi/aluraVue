@@ -24,8 +24,8 @@
 import { computed, defineComponent } from 'vue'
 import Temporizador from './Temporizador.vue'
 import { useStore } from '@/store'
-import { NOTIFICAR } from '@/store/tipo-mutacoes'
 import { TipoDeNotificacao } from '@/interfaces/INotificacao'
+import useNotificador from '@/hooks/useNotificacao'
 
 export default defineComponent({
   name: 'FormularioComponent',
@@ -49,7 +49,7 @@ export default defineComponent({
     },
     salvarTarefa(tempoDecorrido: number): void {
       if (!this.idProjeto) {
-        this.store.commit(NOTIFICAR, {
+        this.notificar({
           titulo: 'Ops!!',
           texto: 'Selecione um projeto antes de finalizar a tarefa!',
           tipo: TipoDeNotificacao.FALHA
@@ -70,9 +70,10 @@ export default defineComponent({
   },
   setup() {
     const store = useStore()
+    const { notificar } = useNotificador()
     return {
       projetos: computed(() => store.state.projetos),
-      store
+      notificar
     }
   }
 })
