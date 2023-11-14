@@ -7,6 +7,7 @@ import {
   ALTERA_PROJETO,
   ALTERA_TAREFA,
   DEFINIR_PROJETOS,
+  DEFINIR_TAREFAS,
   EXCLUIR_PROJETO,
   EXCLUIR_TAREFA,
   NOTIFICAR
@@ -15,9 +16,13 @@ import { ITarefa } from '@/interfaces/ITarefa'
 import { INotificacao } from '@/interfaces/INotificacao'
 import {
   ALTERAR_PROJETO,
+  ALTERAR_TAREFA,
   APAGAR_PROJETO,
+  APAGAR_TAREFA,
   CADASTRAR_PROJETO,
-  OBTER_PROJETOS
+  CADASTRAR_TAREFA,
+  OBTER_PROJETOS,
+  OBTER_TAREFAS
 } from './tipo-acoes'
 import http from '@/http'
 
@@ -55,9 +60,12 @@ export const store = createStore<Estado>({
     [EXCLUIR_PROJETO](state, id: string) {
       state.projetos = state.projetos.filter(proj => proj.id !== id)
     },
+    [DEFINIR_TAREFAS](state, tarefas: ITarefa[]) {
+      state.tarefas = tarefas
+    },
     [ADICIONA_TAREFA](state, tarefa: ITarefa) {
       tarefa.id = Date.now().toString()
-      state.tarefas.push(tarefa)
+      state.tarefas.unshift(tarefa)
     },
     [ALTERA_TAREFA](state, tarefa: ITarefa) {
       const index = state.tarefas.findIndex(tar => tar.id === tarefa.id)
@@ -81,7 +89,7 @@ export const store = createStore<Estado>({
   actions: {
     async [OBTER_PROJETOS]({ commit }) {
       try {
-        const { data: projetos } = await http.get('projetos')
+        const { data: projetos } = await http.get<IProjeto[]>('projetos')
         commit(DEFINIR_PROJETOS, projetos)
       } catch (e) {
         console.log(e)
@@ -112,6 +120,45 @@ export const store = createStore<Estado>({
         const { data } = await http.delete(`projetos/${id}`)
 
         commit(EXCLUIR_PROJETO, id)
+
+        return data
+      } catch (e) {
+        console.log(e)
+        return
+      }
+    },
+    async [OBTER_TAREFAS]({ commit }) {
+      try {
+        const { data: tarefas } = await http.get<ITarefa[]>('tarefas')
+        commit(DEFINIR_TAREFAS, tarefas.reverse())
+      } catch (e) {
+        console.log(e)
+      }
+    },
+    async [CADASTRAR_TAREFA]({ commit }, tarefa: ITarefa) {
+      try {
+        const { data: resTarefa } = await http.post('tarefas', tarefa)
+
+        commit(ADICIONA_TAREFA, resTarefa)
+        return resTarefa
+      } catch (e) {
+        console.log(e)
+        return
+      }
+    },
+    async [ALTERAR_TAREFA](context, tarefa: ITarefa) {
+      try {
+        return (await http.put(`tarefas/${tarefa.id}`, tarefa)).data
+      } catch (e) {
+        console.log(e)
+        return
+      }
+    },
+    async [APAGAR_TAREFA]({ commit }, id: string) {
+      try {
+        const { data } = await http.delete(`tarefas/${id}`)
+
+        commit(EXCLUIR_TAREFA, id)
 
         return data
       } catch (e) {

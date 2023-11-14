@@ -15,13 +15,13 @@ import Formulario from '../components/Formulario.vue';
 import Box from '../components/Box.vue';
 import { ITarefa } from '../interfaces/ITarefa';
 import { useStore } from '@/store';
-import { ADICIONA_TAREFA } from '@/store/tipo-mutacoes';
+import { CADASTRAR_TAREFA, OBTER_PROJETOS, OBTER_TAREFAS } from '@/store/tipo-acoes';
 
 export default defineComponent({
   name: 'TarefasView',
   methods: {
     salvarTarefa(tarefa: ITarefa) {
-      this.store.commit(ADICIONA_TAREFA, tarefa)
+      this.store.dispatch(CADASTRAR_TAREFA, tarefa)
     },
   },
   computed: {
@@ -31,6 +31,8 @@ export default defineComponent({
   },
   setup() {
     const store = useStore()
+    store.dispatch(OBTER_TAREFAS)
+    store.dispatch(OBTER_PROJETOS)
     return {
       tarefas: computed(() => store.state.tarefas),
       store
