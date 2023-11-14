@@ -18,9 +18,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useStore } from '../../store/index'
-import { ADICIONA_PROJETO, ALTERA_PROJETO } from '@/store/tipo-mutacoes';
 import { TipoDeNotificacao } from '@/interfaces/INotificacao';
 import { notificacaoMixin } from '@/mixins/notificar';
+import { ALTERAR_PROJETO, CADASTRAR_PROJETO } from '@/store/tipo-acoes';
 
 export default defineComponent({
   name: 'FormularioView',
@@ -45,23 +45,39 @@ export default defineComponent({
     }
   },
   methods: {
-    salvar() {
+    async salvar() {
       if (this.id) {
-        this.store.commit(ALTERA_PROJETO, { id: this.id, nome: this.nomeDoProjeto })
+        const proj = await this.store.dispatch(ALTERAR_PROJETO, { id: this.id, nome: this.nomeDoProjeto })
+        if (!proj) {
+          this.lidarComErro('Houve um problema ao editar o projeto :(')
+          return
+        }
       } else {
-        this.store.commit(ADICIONA_PROJETO, this.nomeDoProjeto)
+        const proj = await this.store.dispatch(CADASTRAR_PROJETO, this.nomeDoProjeto)
+
+        if (!proj) {
+          this.lidarComErro('Houve um problema ao cadastrar um novo projeto :(')
+          return
+        }
       }
-
+      this.lidarComSucesso('Novo projeto criado!', 'Prontinho! Seu projeto já está disponível.')
+    },
+    lidarComSucesso(titulo: string, texto: string) {
       this.nomeDoProjeto = ''
-
+      this.$router.push('/projetos')
       this.notificar({
-        titulo: 'Novo projeto criado!',
-        texto: 'Prontinho! Seu projeto já está disponível.',
+        titulo,
+        texto,
         tipo: TipoDeNotificacao.SUCESSO
       })
-
-      this.$router.push('/projetos')
     },
+    lidarComErro(texto: string) {
+      this.notificar({
+        titulo: 'Ops!',
+        texto,
+        tipo: TipoDeNotificacao.FALHA
+      })
+    }
   },
   setup() {
     const store = useStore()

@@ -39,15 +39,26 @@
 <script lang="ts">
 import { computed, defineComponent } from 'vue';
 import { useStore } from '../../store/index'
-import { EXCLUIR_PROJETO, NOTIFICAR } from '@/store/tipo-mutacoes';
 import { TipoDeNotificacao } from '@/interfaces/INotificacao';
+import { APAGAR_PROJETO, OBTER_PROJETOS } from '@/store/tipo-acoes';
+import useNotificador from '@/hooks/useNotificacao'
 
 export default defineComponent({
   name: 'ListaView',
   methods: {
-    excluir(id: string) {
-      this.store.commit(EXCLUIR_PROJETO, id)
-      this.store.commit(NOTIFICAR, {
+    async excluir(id: string) {
+      const proj = await this.store.dispatch(APAGAR_PROJETO, id)
+
+      if (!proj) {
+        this.notificar({
+          titulo: 'Ops!',
+          texto: 'Houve um problema ao apagar o projeto :(',
+          tipo: TipoDeNotificacao.FALHA
+        })
+        return
+      }
+
+      this.notificar({
         titulo: 'Projeto excluído!',
         texto: 'Seu projeto foi de base.',
         tipo: TipoDeNotificacao.ATENCAO
@@ -56,9 +67,12 @@ export default defineComponent({
   },
   setup() {
     const store = useStore()
+    const { notificar } = useNotificador()
+    store.dispatch(OBTER_PROJETOS)
     return {
       projetos: computed(() => store.state.projetos),
-      store
+      store,
+      notificar
     }
   }
 });

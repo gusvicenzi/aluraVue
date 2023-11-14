@@ -6,12 +6,20 @@ import {
   ADICIONA_TAREFA,
   ALTERA_PROJETO,
   ALTERA_TAREFA,
+  DEFINIR_PROJETOS,
   EXCLUIR_PROJETO,
   EXCLUIR_TAREFA,
   NOTIFICAR
 } from './tipo-mutacoes'
 import { ITarefa } from '@/interfaces/ITarefa'
 import { INotificacao } from '@/interfaces/INotificacao'
+import {
+  ALTERAR_PROJETO,
+  APAGAR_PROJETO,
+  CADASTRAR_PROJETO,
+  OBTER_PROJETOS
+} from './tipo-acoes'
+import http from '@/http'
 
 interface Estado {
   projetos: IProjeto[]
@@ -24,10 +32,13 @@ export const key: InjectionKey<Store<Estado>> = Symbol()
 export const store = createStore<Estado>({
   state: {
     notificacoes: [],
-    projetos: [{ id: Date.now().toString(), nome: 'teste' }],
+    projetos: [],
     tarefas: []
   },
   mutations: {
+    [DEFINIR_PROJETOS](state, projetos: IProjeto[]) {
+      state.projetos = projetos
+    },
     [ADICIONA_PROJETO](state, nomeDoProjeto: string) {
       const projeto = {
         id: Date.now().toString(),
@@ -65,6 +76,48 @@ export const store = createStore<Estado>({
           not => not.id !== novaNotificacao.id
         )
       }, 3000)
+    }
+  },
+  actions: {
+    async [OBTER_PROJETOS]({ commit }) {
+      try {
+        const { data: projetos } = await http.get('projetos')
+        commit(DEFINIR_PROJETOS, projetos)
+      } catch (e) {
+        console.log(e)
+      }
+    },
+    async [CADASTRAR_PROJETO](context, nomeDoProjeto: string) {
+      try {
+        return (
+          await http.post('projetos', {
+            nome: nomeDoProjeto
+          })
+        ).data
+      } catch (e) {
+        console.log(e)
+        return
+      }
+    },
+    async [ALTERAR_PROJETO](context, projeto: IProjeto) {
+      try {
+        return (await http.put(`projetos/${projeto.id}`, projeto)).data
+      } catch (e) {
+        console.log(e)
+        return
+      }
+    },
+    async [APAGAR_PROJETO]({ commit }, id: number) {
+      try {
+        const { data } = await http.delete(`projetos/${id}`)
+
+        commit(EXCLUIR_PROJETO, id)
+
+        return data
+      } catch (e) {
+        console.log(e)
+        return
+      }
     }
   }
 })

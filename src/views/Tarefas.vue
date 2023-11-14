@@ -26,8 +26,6 @@ export default defineComponent({
   },
   computed: {
     listaEstaVazia(): boolean {
-      console.log(this.tarefas);
-
       return this.store.state.tarefas.length === 0
     }
   },
