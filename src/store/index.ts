@@ -146,9 +146,15 @@ export const store = createStore<Estado>({
         return
       }
     },
-    async [ALTERAR_TAREFA](context, tarefa: ITarefa) {
+    async [ALTERAR_TAREFA]({ commit }, tarefa: ITarefa) {
       try {
-        return (await http.put(`tarefas/${tarefa.id}`, tarefa)).data
+        const { data: resTarefa } = await http.put(
+          `tarefas/${tarefa.id}`,
+          tarefa
+        )
+
+        commit(ALTERA_TAREFA, resTarefa)
+        return resTarefa
       } catch (e) {
         console.log(e)
         return
