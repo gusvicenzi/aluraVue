@@ -16,11 +16,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { useStore } from '../../store/index'
 import { TipoDeNotificacao } from '@/interfaces/INotificacao';
-import { notificacaoMixin } from '@/mixins/notificar';
 import { ALTERAR_PROJETO, CADASTRAR_PROJETO } from '@/store/tipo-acoes';
+import useNotificador from '@/hooks/useNotificacao'
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'FormularioView',
@@ -30,59 +31,56 @@ export default defineComponent({
       required: true
     }
   },
-  mixins: [
-    notificacaoMixin
-  ],
-  data() {
-    return {
-      nomeDoProjeto: '',
-    }
-  },
-  mounted() {
-    if (this.id) {
-      const projeto = this.store.state.projeto.projetos.find(proj => proj.id === this.id)
-      this.nomeDoProjeto = projeto?.nome || ''
-    }
-  },
-  methods: {
-    async salvar() {
-      if (this.id) {
-        const proj = await this.store.dispatch(ALTERAR_PROJETO, { id: this.id, nome: this.nomeDoProjeto })
-        if (!proj) {
-          this.lidarComErro('Houve um problema ao editar o projeto :(')
-          return
-        }
-      } else {
-        const proj = await this.store.dispatch(CADASTRAR_PROJETO, this.nomeDoProjeto)
+  setup(props) {
+    const router = useRouter()
+    const store = useStore()
+    const { notificar } = useNotificador()
+    const nomeDoProjeto = ref('')
 
-        if (!proj) {
-          this.lidarComErro('Houve um problema ao cadastrar um novo projeto :(')
-          return
-        }
-      }
-      this.lidarComSucesso('Novo projeto criado!', 'Prontinho! Seu projeto já está disponível.')
-    },
-    lidarComSucesso(titulo: string, texto: string) {
-      this.nomeDoProjeto = ''
-      this.$router.push('/projetos')
-      this.notificar({
+    if (props.id) {
+      const projeto = store.state.projeto.projetos.find(proj => proj.id == props.id)
+      nomeDoProjeto.value = projeto?.nome || ''
+    }
+
+    const lidarComSucesso = (titulo: string, texto: string) => {
+      nomeDoProjeto.value = ''
+      notificar({
         titulo,
         texto,
         tipo: TipoDeNotificacao.SUCESSO
       })
-    },
-    lidarComErro(texto: string) {
-      this.notificar({
+      router.push('/projetos')
+    }
+
+    const lidarComErro = (texto: string) => {
+      notificar({
         titulo: 'Ops!',
         texto,
         tipo: TipoDeNotificacao.FALHA
       })
     }
-  },
-  setup() {
-    const store = useStore()
+
+    const salvar = async () => {
+      if (props.id) {
+        const proj = await store.dispatch(ALTERAR_PROJETO, { id: props.id, nome: nomeDoProjeto.value })
+        if (!proj) {
+          lidarComErro('Houve um problema ao editar o projeto :(')
+          return
+        }
+      } else {
+        const proj = await store.dispatch(CADASTRAR_PROJETO, nomeDoProjeto.value)
+
+        if (!proj) {
+          lidarComErro('Houve um problema ao cadastrar um novo projeto :(')
+          return
+        }
+      }
+      lidarComSucesso('Novo projeto criado!', 'Prontinho! Seu projeto já está disponível.')
+    }
+
     return {
-      store,
+      nomeDoProjeto,
+      salvar
     }
   }
 });
