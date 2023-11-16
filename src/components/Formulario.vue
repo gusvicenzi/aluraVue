@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue'
+import { computed, defineComponent, ref } from 'vue'
 import Temporizador from './Temporizador.vue'
 import { useStore } from '@/store'
 import { TipoDeNotificacao } from '@/interfaces/INotificacao'
@@ -31,49 +31,55 @@ export default defineComponent({
   name: 'FormularioComponent',
   emits: ['aoSalvarTarefa'],
   components: { Temporizador },
-  data() {
-    return {
-      descricao: '',
-      idProjeto: '',
-      tempoEmSegundos: 0,
-      cronometro: 0,
-      cronometroRodando: false
-    }
-  },
-  methods: {
-    iniciarTemporizador() {
-      this.cronometroRodando = true
-      this.cronometro = setInterval(() => {
-        this.tempoEmSegundos += 1;
-      }, 1000);
-    },
-    salvarTarefa(tempoDecorrido: number): void {
-      if (!this.idProjeto) {
-        this.notificar({
+  setup(props, { emit }) {
+    const store = useStore()
+    const { notificar } = useNotificador()
+
+    const descricao = ref('')
+    const idProjeto = ref('')
+    const tempoEmSegundos = ref(0)
+    const cronometro = ref(0)
+    const cronometroRodando = ref(false)
+
+    const projetos = computed(() => store.state.projeto.projetos)
+
+    const salvarTarefa = (tempoDecorrido: number): void => {
+      if (!idProjeto.value) {
+        notificar({
           titulo: 'Ops!!',
           texto: 'Selecione um projeto antes de finalizar a tarefa!',
           tipo: TipoDeNotificacao.FALHA
         })
         return
       }
-      console.log(`tempo da tarefa ${this.descricao}: `, tempoDecorrido);
-      this.$emit('aoSalvarTarefa', { duracaoEmSegundos: tempoDecorrido, descricao: this.descricao, projeto: this.projetos.find(proj => proj.id === this.idProjeto) })
+      console.log(`tempo da tarefa ${descricao.value}: `, tempoDecorrido);
+      emit('aoSalvarTarefa', { duracaoEmSegundos: tempoDecorrido, descricao: descricao.value, projeto: projetos.value.find(proj => proj.id === idProjeto.value) })
 
-      this.descricao = ''
+      descricao.value = ''
 
       // para e zera temporizador
-      this.cronometroRodando = false
-      clearInterval(this.cronometro);
-      this.tempoEmSegundos = 0
-
+      cronometroRodando.value = false
+      clearInterval(cronometro.value);
+      tempoEmSegundos.value = 0
     }
-  },
-  setup() {
-    const store = useStore()
-    const { notificar } = useNotificador()
+
+    const iniciarTemporizador = () => {
+      cronometroRodando.value = true
+      cronometro.value = setInterval(() => {
+        tempoEmSegundos.value += 1;
+      }, 1000);
+    }
+
     return {
-      projetos: computed(() => store.state.projeto.projetos),
-      notificar
+      projetos,
+      notificar,
+      descricao,
+      idProjeto,
+      tempoEmSegundos,
+      cronometro,
+      cronometroRodando,
+      salvarTarefa,
+      iniciarTemporizador
     }
   }
 })
