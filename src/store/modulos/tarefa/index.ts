@@ -38,9 +38,12 @@ export const tarefa: Module<EstadoTarefa, Estado> = {
     }
   },
   actions: {
-    async [OBTER_TAREFAS]({ commit }) {
+    async [OBTER_TAREFAS]({ commit }, filtro: string) {
       try {
-        const { data: tarefas } = await http.get<ITarefa[]>('tarefas')
+        let url = 'tarefas'
+
+        if (filtro) url += '?descricao=' + filtro
+        const { data: tarefas } = await http.get<ITarefa[]>(url)
         commit(DEFINIR_TAREFAS, tarefas.reverse())
       } catch (e) {
         console.log(e)
